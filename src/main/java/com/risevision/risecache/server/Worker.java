@@ -215,8 +215,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    			boolean isShutdown = fname.startsWith("shutdown");
 	    			boolean isVersion = fname.startsWith("version");
 	    			boolean isLocalName = fname.startsWith("localname") && !fileUrl.isEmpty(); // convert file URL to local file name
-	    			boolean isVideo = fname.startsWith("video") && !fileUrl.isEmpty();
-	    			boolean isFile = fname.startsWith("?") && !fileUrl.isEmpty();  //this is to make it compatible with Image Proxy
+	    			boolean isFile = !fileUrl.isEmpty();
 	    			
 	    			//do not serve video on base port.
 	//    			if ((isVideo || isFile) && s.getLocalPort() == Config.basePort) {
@@ -252,7 +251,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    			} else if (isLocalName) {
 	    				HttpUtils.printHeader_ResponseCode(HTTP_OK_TEXT, ps, true);
 	    				ps.print(DownloadManager.getFileName(fileUrl));
-	    			} else if (isVideo || isFile) {
+	    			} else if (isFile) {
 	    				log("video command received");
 	    				processRequest_GetVideo(fileUrl, ps, isGetRequest, header);
 	    			} else {
