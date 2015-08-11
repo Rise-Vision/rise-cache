@@ -215,8 +215,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    			boolean isShutdown = fname.startsWith("shutdown");
 	    			boolean isVersion = fname.startsWith("version");
 	    			boolean isLocalName = fname.startsWith("localname") && !fileUrl.isEmpty(); // convert file URL to local file name
-	    			boolean isVideo = fname.startsWith("video") && !fileUrl.isEmpty();
-	    			boolean isFile = fname.startsWith("?") && !fileUrl.isEmpty();  //this is to make it compatible with Image Proxy
+	    			boolean isFile = !fileUrl.isEmpty();
 	    			
 	    			//do not serve video on base port.
 	//    			if ((isVideo || isFile) && s.getLocalPort() == Config.basePort) {
@@ -252,9 +251,9 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    			} else if (isLocalName) {
 	    				HttpUtils.printHeader_ResponseCode(HTTP_OK_TEXT, ps, true);
 	    				ps.print(DownloadManager.getFileName(fileUrl));
-	    			} else if (isVideo || isFile) {
-	    				log("video command received");
-	    				processRequest_GetVideo(fileUrl, ps, isGetRequest, header);
+	    			} else if (isFile) {
+	    				log("file request received");
+	    				processFileRequest(fileUrl, ps, isGetRequest, header);
 	    			} else {
 	    				HttpUtils.printHeader_ResponseCode(HTTP_BAD_REQUEST_TEXT, ps, true);
 	    			}
@@ -284,16 +283,13 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    }
 	  }
 
-	private void processRequest_GetVideo(String fileUrl, PrintStream ps, boolean isGetRequest, HttpHeader header) throws IOException {
+	private void processFileRequest(String fileUrl, PrintStream ps, boolean isGetRequest, HttpHeader header) throws IOException {
 		
 		try {
-			 
-			//log("processRequest_GetVideo() URL=" + fileUrl);
 			ServerPorts.setConnected(s.getLocalPort(), fileUrl);
 			
 			String fileName = DownloadManager.getFileNameIfFileExists(fileUrl);
 			boolean fileExists = fileName != null && !fileName.isEmpty();
-
 			
 			//return file if it was downloaded otherwise start download
 			if (fileExists) {
@@ -329,8 +325,6 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 		} finally {
 			ServerPorts.setDisconnected(s.getLocalPort());
 		}
-		//log("processRequest_GetVideo()-end URL=" + fileUrl);
-				
 	}
 	
 	private byte[] readRangeData(File file, List<int[]> ranges) throws IOException {
