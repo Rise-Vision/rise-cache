@@ -256,47 +256,52 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 				return;
 	        }
         } catch (Exception e) {
-			log("Error: " + e.getMessage() + "\n" + e.getStackTrace());
-			safeClose(s);
+			e.printStackTrace();
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			log("Error: " + header.file + "\n" + e.getMessage() + "\n" + sw.toString());
+			safeClose(s, ps);
         }
 
 	}
 
-  private void safeClose(Socket socket) {
+  private void safeClose(Socket socket, PrintStream ps) {
 	    try {
-	      socket.close();
+			HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps, true);
+			ps.flush();
+	      	socket.close();
 	    } catch (IOException e) {
 
 	    }
 	  }
 
-	private void processFileRequest(String fileUrl, PrintStream ps, boolean isGetRequest, HttpHeader header) throws IOException {
+	private void processFileRequest(String fileUrl, PrintStream ps, boolean isGetRequest, HttpHeader header) throws Exception {
 		
 		try {
 			ServerPorts.setConnected(s.getLocalPort(), fileUrl);
-			
+
 			String fileName = DownloadManager.getFileNameIfFileExists(fileUrl);
 			boolean fileExists = fileName != null && !fileName.isEmpty();
-			
+
 			//return file if it was downloaded otherwise start download
 			if (fileExists) {
 				File file = new File(Config.cachePath, fileName);
-				
+
 				FileUtils.updateLastAccessed(file);
-				
+
 				File headerFile = new File(Config.cachePath, FileUtils.dataFileNameToHeaderFileName(fileName));
 				ArrayList<String> fileHeaders = FileUtils.loadHeaders(headerFile);
 				if (isGetRequest) {
 					sendFile(file, ps, header, fileHeaders);
-				}
-				else {
+				} else {
 					HttpUtils.printHeaders(file, fileHeaders, ps, HTTP_OK_TEXT);
 					ps.write(EOL);
 				}
-				
+
 				//check if file is modified async
 				DownloadWorker.downloadFileIfModified(fileUrl);
-				
+
 			} else {
 				try {
 					if (DownloadManager.download(fileUrl, ps, null, isGetRequest))
@@ -308,39 +313,41 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 					e.printStackTrace();
 				}
 			}
-			
+		} catch (Exception e) {
+			throw e;
 		} finally {
 			ServerPorts.setDisconnected(s.getLocalPort());
 		}
 	}
 
-	private PipedOutputStream readRangeData(File file, List<int[]> ranges) throws IOException {
-
-		PipedOutputStream out = new PipedOutputStream();
+	private void readRangeData(File file, List<int[]> ranges, PipedOutputStream out) throws Exception {
 
 		RandomAccessFile f = new RandomAccessFile(file, "r");
+		byte[] temp;
+		try {
+			for (int[] range : ranges) {
+				if (range[0] >= range[1]) {
+					continue;
+				}
 
-		for (int[] range : ranges) {
-			if (range[0] >= range[1]) {
-				continue;
+				f.seek(range[0]);
+
+				int count = range[1] - range[0] + 1;
+
+				temp = new byte[count];
+
+				f.readFully(temp);
+				f.close();
+
+				out.write(temp);
 			}
-
-			f.seek(range[0]);
-
-			int count = range[1] - range[0] + 1;
-
-			byte[] temp = new byte[count];
-
-			f.readFully(temp);
-			f.close();
-
-			out.write(temp);
+		} catch (OutOfMemoryError e) {
+			temp = null;
+			throw new Exception(e);
 		}
-
-		return out;
 	  }
 	
-	void sendFile(File targ, PrintStream ps, HttpHeader header, ArrayList<String> fileHeaders) throws IOException {
+	void sendFile(File targ, PrintStream ps, HttpHeader header, ArrayList<String> fileHeaders) throws Exception {
 		//log("sendFile() file=" + targ.getName());
 		InputStream is = null;
 		int bufferSize = 15728640; //15MB of buffer
@@ -362,8 +369,10 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 					range[1] = maxLength;
 					is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
 				} else{
-					PipedOutputStream rangeData = readRangeData(targ, ranges);
-					is = new BufferedInputStream(new PipedInputStream(rangeData), bufferSize);
+					PipedOutputStream pipedOutputStream = new PipedOutputStream();
+					PipedInputStream pipedInputStream = new PipedInputStream(pipedOutputStream);
+					readRangeData(targ, ranges, pipedOutputStream);
+					is = new BufferedInputStream(pipedInputStream, bufferSize);
 				}
 				
 				//remove line with HEADER_CONTENT_LENGTH (this was added upon loading headers from file
