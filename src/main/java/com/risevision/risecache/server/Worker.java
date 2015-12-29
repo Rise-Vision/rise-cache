@@ -76,34 +76,6 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 		}
 	}
 
-	  /**
-	   * @return the given string with any %20 sequences decoded
-	   */
-/*	  private String decodeWebChars(String line) {
-	    // GET /dart/test%C3%BCuuuu/swipe.html HTTP/1.1
-	    //   ==>
-	    // GET /dart/test�uuuu/swipe.html HTTP/1.1
-
-	    byte[] bytes = line.getBytes();
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-	    for (int i = 0; i < bytes.length; i++) {
-	      if (bytes[i] == '%' && (i + 2 < bytes.length)) {
-	        int val = hex2Int((char) bytes[i + 1], (char) bytes[i + 2]);
-
-	        out.write(val);
-
-	        i += 2;
-	      } else {
-	        out.write(bytes[i]);
-	      }
-	    }
-
-	    return new String(out.toByteArray(), StandardCharsets.UTF_8);
-	    
-	  }*/
-	  
-
 	  private HttpHeader parseHeader(InputStream inputStream) throws IOException {
 	    HttpHeader header = new HttpHeader();
 	    
