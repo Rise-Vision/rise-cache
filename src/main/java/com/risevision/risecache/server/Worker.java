@@ -1,27 +1,8 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
 package com.risevision.risecache.server;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.RandomAccessFile;
-import java.net.Socket;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 
 import com.risevision.risecache.Config;
 import com.risevision.risecache.Globals;
@@ -29,6 +10,11 @@ import com.risevision.risecache.cache.FileRequests;
 import com.risevision.risecache.cache.FileUtils;
 import com.risevision.risecache.downloader.DownloadManager;
 import com.risevision.risecache.downloader.DownloadWorker;
+
+import java.io.*;
+import java.net.Socket;
+import java.net.URLDecoder;
+import java.util.*;
 
 class Worker extends WebServer implements HttpConstants, Runnable {
 	final static int BUF_SIZE = 2048;
@@ -96,7 +82,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 /*	  private String decodeWebChars(String line) {
 	    // GET /dart/test%C3%BCuuuu/swipe.html HTTP/1.1
 	    //   ==>
-	    // GET /dart/testüuuuu/swipe.html HTTP/1.1
+	    // GET /dart/testï¿½uuuu/swipe.html HTTP/1.1
 
 	    byte[] bytes = line.getBytes();
 	    ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -270,7 +256,8 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 				return;
 	        }
         } catch (Exception e) {
-        	safeClose(s);
+			log("Error: " + e.getMessage() + "\n" + e.getStackTrace());
+			safeClose(s);
         }
 
 	}
@@ -326,41 +313,37 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			ServerPorts.setDisconnected(s.getLocalPort());
 		}
 	}
-	
-	private byte[] readRangeData(File file, List<int[]> ranges) throws IOException {
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-	    RandomAccessFile f = new RandomAccessFile(file, "r");
+	private PipedOutputStream readRangeData(File file, List<int[]> ranges) throws IOException {
 
-	    int maxLength = (int) f.length() - 1;
+		PipedOutputStream out = new PipedOutputStream();
 
-	    for (int[] range : ranges) {
-	      if (range[1] > maxLength || range[1] == -1) {
-	        range[1] = maxLength;
-	      }
+		RandomAccessFile f = new RandomAccessFile(file, "r");
 
-	      if (range[0] >= range[1]) {
-	        continue;
-	      }
+		for (int[] range : ranges) {
+			if (range[0] >= range[1]) {
+				continue;
+			}
 
-	      f.seek(range[0]);
+			f.seek(range[0]);
 
-	      int count = range[1] - range[0] + 1;
+			int count = range[1] - range[0] + 1;
 
-	      byte[] temp = new byte[count];
+			byte[] temp = new byte[count];
 
-	      f.readFully(temp);
+			f.readFully(temp);
+			f.close();
 
-	      out.write(temp);
-	    }
+			out.write(temp);
+		}
 
-	    return out.toByteArray();
+		return out;
 	  }
 	
 	void sendFile(File targ, PrintStream ps, HttpHeader header, ArrayList<String> fileHeaders) throws IOException {
 		//log("sendFile() file=" + targ.getName());
 		InputStream is = null;
-		
+		int bufferSize = 15728640; //15MB of buffer
 		// Indicate that we support requesting a subset of the document.
 		fileHeaders.add(HEADER_ACCEPT_RANGES + ": " + "bytes");	
 		if (targ.isDirectory()) {
@@ -371,10 +354,17 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 		} else {
 			List<int[]> ranges = header.getRanges();
 			if (ranges != null) {
-				byte[] rangeData = readRangeData(targ, ranges);
-				is = new ByteArrayInputStream(rangeData);  
+
 				// Content-Range: bytes X-Y/Z
 				int[] range = ranges.get(0);
+				int maxLength = (int) targ.length() - 1;
+				if (range[1] > maxLength || range[1] == -1) {
+					range[1] = maxLength;
+					is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
+				} else{
+					PipedOutputStream rangeData = readRangeData(targ, ranges);
+					is = new BufferedInputStream(new PipedInputStream(rangeData), bufferSize);
+				}
 				
 				//remove line with HEADER_CONTENT_LENGTH (this was added upon loading headers from file
 				for (String headerLine : fileHeaders) {
@@ -383,13 +373,13 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 						break;
 					}
 				}
-				fileHeaders.add(HEADER_CONTENT_LENGTH + " : " + rangeData.length);
+				fileHeaders.add(HEADER_CONTENT_LENGTH + " : " + range[1]);
 				log("ranges header received. " + HEADER_CONTENT_RANGE + ": " + "bytes " + range[0] + "-" + range[1] + "/" + targ.length());
 				fileHeaders.add(HEADER_CONTENT_RANGE + " : " + "bytes " + range[0] + "-" + range[1] + "/" + targ.length());
 				HttpUtils.printHeaders(targ, fileHeaders, ps, HTTP_PARTIAL_CONTENT_TEXT);
 			} else {
 				HttpUtils.printHeaders(targ, fileHeaders, ps, HTTP_OK_TEXT);
-				is = new FileInputStream(targ.getAbsolutePath());
+				is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
 			}			
 					  
 			
