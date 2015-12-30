@@ -12,3 +12,7 @@ buildNumber.properties
 .classpath
 .externalToolBuilders/
 .settings/
+
+#IntelliJ
+.idea
+risecache.iml

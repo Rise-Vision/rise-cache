@@ -1,27 +1,8 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
 package com.risevision.risecache.server;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.RandomAccessFile;
-import java.net.Socket;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
 
 import com.risevision.risecache.Config;
 import com.risevision.risecache.Globals;
@@ -29,6 +10,11 @@ import com.risevision.risecache.cache.FileRequests;
 import com.risevision.risecache.cache.FileUtils;
 import com.risevision.risecache.downloader.DownloadManager;
 import com.risevision.risecache.downloader.DownloadWorker;
+
+import java.io.*;
+import java.net.Socket;
+import java.net.URLDecoder;
+import java.util.*;
 
 class Worker extends WebServer implements HttpConstants, Runnable {
 	final static int BUF_SIZE = 2048;
@@ -89,34 +75,6 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			}
 		}
 	}
-
-	  /**
-	   * @return the given string with any %20 sequences decoded
-	   */
-/*	  private String decodeWebChars(String line) {
-	    // GET /dart/test%C3%BCuuuu/swipe.html HTTP/1.1
-	    //   ==>
-	    // GET /dart/testüuuuu/swipe.html HTTP/1.1
-
-	    byte[] bytes = line.getBytes();
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-	    for (int i = 0; i < bytes.length; i++) {
-	      if (bytes[i] == '%' && (i + 2 < bytes.length)) {
-	        int val = hex2Int((char) bytes[i + 1], (char) bytes[i + 2]);
-
-	        out.write(val);
-
-	        i += 2;
-	      } else {
-	        out.write(bytes[i]);
-	      }
-	    }
-
-	    return new String(out.toByteArray(), StandardCharsets.UTF_8);
-	    
-	  }*/
-	  
 
 	  private HttpHeader parseHeader(InputStream inputStream) throws IOException {
 	    HttpHeader header = new HttpHeader();
@@ -270,46 +228,52 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 				return;
 	        }
         } catch (Exception e) {
-        	safeClose(s);
+			e.printStackTrace();
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+			log("Error: " + header.file + "\n" + e.getMessage() + "\n" + sw.toString());
+			safeClose(s, ps);
         }
 
 	}
 
-  private void safeClose(Socket socket) {
+  private void safeClose(Socket socket, PrintStream ps) {
 	    try {
-	      socket.close();
+			HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps, true);
+			ps.flush();
+	      	socket.close();
 	    } catch (IOException e) {
 
 	    }
 	  }
 
-	private void processFileRequest(String fileUrl, PrintStream ps, boolean isGetRequest, HttpHeader header) throws IOException {
+	private void processFileRequest(String fileUrl, PrintStream ps, boolean isGetRequest, HttpHeader header) throws Exception {
 		
 		try {
 			ServerPorts.setConnected(s.getLocalPort(), fileUrl);
-			
+
 			String fileName = DownloadManager.getFileNameIfFileExists(fileUrl);
 			boolean fileExists = fileName != null && !fileName.isEmpty();
-			
+
 			//return file if it was downloaded otherwise start download
 			if (fileExists) {
 				File file = new File(Config.cachePath, fileName);
-				
+
 				FileUtils.updateLastAccessed(file);
-				
+
 				File headerFile = new File(Config.cachePath, FileUtils.dataFileNameToHeaderFileName(fileName));
 				ArrayList<String> fileHeaders = FileUtils.loadHeaders(headerFile);
 				if (isGetRequest) {
 					sendFile(file, ps, header, fileHeaders);
-				}
-				else {
+				} else {
 					HttpUtils.printHeaders(file, fileHeaders, ps, HTTP_OK_TEXT);
 					ps.write(EOL);
 				}
-				
+
 				//check if file is modified async
 				DownloadWorker.downloadFileIfModified(fileUrl);
-				
+
 			} else {
 				try {
 					if (DownloadManager.download(fileUrl, ps, null, isGetRequest))
@@ -321,46 +285,44 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 					e.printStackTrace();
 				}
 			}
-			
+		} catch (Exception e) {
+			throw e;
 		} finally {
 			ServerPorts.setDisconnected(s.getLocalPort());
 		}
 	}
-	
-	private byte[] readRangeData(File file, List<int[]> ranges) throws IOException {
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-	    RandomAccessFile f = new RandomAccessFile(file, "r");
+	private void readRangeData(File file, List<int[]> ranges, PipedOutputStream out) throws Exception {
 
-	    int maxLength = (int) f.length() - 1;
+		RandomAccessFile f = new RandomAccessFile(file, "r");
+		byte[] temp;
+		try {
+			for (int[] range : ranges) {
+				if (range[0] >= range[1]) {
+					continue;
+				}
 
-	    for (int[] range : ranges) {
-	      if (range[1] > maxLength || range[1] == -1) {
-	        range[1] = maxLength;
-	      }
+				f.seek(range[0]);
 
-	      if (range[0] >= range[1]) {
-	        continue;
-	      }
+				int count = range[1] - range[0] + 1;
 
-	      f.seek(range[0]);
+				temp = new byte[count];
 
-	      int count = range[1] - range[0] + 1;
+				f.readFully(temp);
+				f.close();
 
-	      byte[] temp = new byte[count];
-
-	      f.readFully(temp);
-
-	      out.write(temp);
-	    }
-
-	    return out.toByteArray();
+				out.write(temp);
+			}
+		} catch (OutOfMemoryError e) {
+			temp = null;
+			throw new Exception(e);
+		}
 	  }
 	
-	void sendFile(File targ, PrintStream ps, HttpHeader header, ArrayList<String> fileHeaders) throws IOException {
+	void sendFile(File targ, PrintStream ps, HttpHeader header, ArrayList<String> fileHeaders) throws Exception {
 		//log("sendFile() file=" + targ.getName());
 		InputStream is = null;
-		
+		int bufferSize = 15728640; //15MB of buffer
 		// Indicate that we support requesting a subset of the document.
 		fileHeaders.add(HEADER_ACCEPT_RANGES + ": " + "bytes");	
 		if (targ.isDirectory()) {
@@ -371,10 +333,19 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 		} else {
 			List<int[]> ranges = header.getRanges();
 			if (ranges != null) {
-				byte[] rangeData = readRangeData(targ, ranges);
-				is = new ByteArrayInputStream(rangeData);  
+
 				// Content-Range: bytes X-Y/Z
 				int[] range = ranges.get(0);
+				int maxLength = (int) targ.length() - 1;
+				if (range[1] > maxLength || range[1] == -1) {
+					range[1] = maxLength;
+					is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
+				} else{
+					PipedOutputStream pipedOutputStream = new PipedOutputStream();
+					PipedInputStream pipedInputStream = new PipedInputStream(pipedOutputStream);
+					readRangeData(targ, ranges, pipedOutputStream);
+					is = new BufferedInputStream(pipedInputStream, bufferSize);
+				}
 				
 				//remove line with HEADER_CONTENT_LENGTH (this was added upon loading headers from file
 				for (String headerLine : fileHeaders) {
@@ -383,13 +354,13 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 						break;
 					}
 				}
-				fileHeaders.add(HEADER_CONTENT_LENGTH + " : " + rangeData.length);
+				fileHeaders.add(HEADER_CONTENT_LENGTH + " : " + range[1]);
 				log("ranges header received. " + HEADER_CONTENT_RANGE + ": " + "bytes " + range[0] + "-" + range[1] + "/" + targ.length());
 				fileHeaders.add(HEADER_CONTENT_RANGE + " : " + "bytes " + range[0] + "-" + range[1] + "/" + targ.length());
 				HttpUtils.printHeaders(targ, fileHeaders, ps, HTTP_PARTIAL_CONTENT_TEXT);
 			} else {
 				HttpUtils.printHeaders(targ, fileHeaders, ps, HTTP_OK_TEXT);
-				is = new FileInputStream(targ.getAbsolutePath());
+				is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
 			}			
 					  
 			
