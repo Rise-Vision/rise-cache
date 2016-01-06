@@ -1,4 +1,4 @@
-// Copyright � 2010 - May 2014 Rise Vision Incorporated.
+// Copyright - 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
@@ -10,6 +10,8 @@ import com.risevision.risecache.cache.FileRequests;
 import com.risevision.risecache.cache.FileUtils;
 import com.risevision.risecache.downloader.DownloadManager;
 import com.risevision.risecache.downloader.DownloadWorker;
+import com.risevision.risecache.externallogger.ExternalLogger;
+import com.risevision.risecache.externallogger.InsertSchema;
 
 import java.io.*;
 import java.net.Socket;
@@ -196,7 +198,8 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    				}
 	    			} else if (isShutdown) {
 	    				log("shutdown command received");
-	    				System.exit(0);
+						ExternalLogger.logExternal(InsertSchema.withEvent("shutdown command received"));
+						System.exit(0);
 	    			} else if (isVersion) {
 	    				HttpUtils.printHeadersCommon(ps, CONTENT_TYPE_TEXT_PLAIN, Globals.APPLICATION_VERSION.length());
 	    				ps.print(Globals.APPLICATION_VERSION);
@@ -211,7 +214,8 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    				ps.print(DownloadManager.getFileName(fileUrl));
 	    			} else if (isFile) {
 	    				log("file request received");
-	    				processFileRequest(fileUrl, ps, isGetRequest, header);
+						ExternalLogger.logExternal(InsertSchema.withEvent("file request received", fileUrl));
+						processFileRequest(fileUrl, ps, isGetRequest, header);
 	    			} else {
 	    				HttpUtils.printHeader_ResponseCode(HTTP_BAD_REQUEST_TEXT, ps, true);
 	    			}
@@ -233,6 +237,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 			log("Error: " + header.file + "\n" + e.getMessage() + "\n" + sw.toString());
+			ExternalLogger.logExternal(InsertSchema.withEvent("handle client error", header.file + " - " + e.getMessage()));
 			safeClose(s, ps);
         }
 
@@ -366,6 +371,8 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			
 			ps.write(EOL);
 		}
+
+		ExternalLogger.logExternal(InsertSchema.withEvent("Sending file", targ.getName()));
 
 		try {
 			int n;

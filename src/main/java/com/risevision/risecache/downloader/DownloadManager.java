@@ -1,4 +1,4 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
@@ -21,6 +21,8 @@ import com.risevision.risecache.Log;
 import com.risevision.risecache.cache.FileInfo;
 import com.risevision.risecache.cache.FileRequests;
 import com.risevision.risecache.cache.FileUtils;
+import com.risevision.risecache.externallogger.ExternalLogger;
+import com.risevision.risecache.externallogger.InsertSchema;
 import com.risevision.risecache.jobs.CheckExpiredJob;
 import com.risevision.risecache.server.HttpConstants;
 import com.risevision.risecache.server.HttpUtils;
@@ -92,6 +94,7 @@ public class DownloadManager {
 			int responseCode = connection.getResponseCode();
 			if (responseCode < 200 || responseCode >= 300) {
 				Log.info("Download cancelled. Response code " + responseCode + " received for URL " + fileUrl);
+				ExternalLogger.logExternal(InsertSchema.withEvent("Download cancelled", "Response code " + responseCode + " received for URL " + fileUrl));
 				HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server respeonse: " + connection.getResponseMessage(), ps, true);
 				return false;
 			}
