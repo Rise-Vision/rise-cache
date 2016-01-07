@@ -19,7 +19,7 @@ import java.net.URLDecoder;
 import java.util.*;
 
 class Worker extends WebServer implements HttpConstants, Runnable {
-	final static int BUF_SIZE = 2048;
+	final static int BUF_SIZE = 4096;
 
 	static final byte[] EOL = { (byte) '\r', (byte) '\n' };
 
@@ -297,37 +297,37 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 		}
 	}
 
-	private void readRangeData(File file, List<int[]> ranges, PipedOutputStream out) throws Exception {
+	private void readRangeData(File file, int maxLength, List<int[]> ranges, PrintStream ps) throws Exception {
 
-		RandomAccessFile f = new RandomAccessFile(file, "r");
-		byte[] temp;
+		InputStream in = new FileInputStream(file);
+
 		try {
-			for (int[] range : ranges) {
-				if (range[0] >= range[1]) {
-					continue;
-				}
+            for (int[] range : ranges) {
+                if (range[1] > maxLength || range[1] == -1) {
+                range[1] = maxLength;
+                }
 
-				f.seek(range[0]);
+                if (range[0] >= range[1]) {
+                continue;
+                }
 
-				int count = range[1] - range[0] + 1;
+                in.skip(range[0]);
 
-				temp = new byte[count];
-
-				f.readFully(temp);
-				f.close();
-
-				out.write(temp);
-			}
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    ps.write(buf, 0, n);
+                }
+	        }
 		} catch (OutOfMemoryError e) {
-			temp = null;
 			throw new Exception(e);
 		}
+
 	  }
-	
+
 	void sendFile(File targ, PrintStream ps, HttpHeader header, ArrayList<String> fileHeaders) throws Exception {
 		//log("sendFile() file=" + targ.getName());
 		InputStream is = null;
-		int bufferSize = 15728640; //15MB of buffer
+
 		// Indicate that we support requesting a subset of the document.
 		fileHeaders.add(HEADER_ACCEPT_RANGES + ": " + "bytes");	
 		if (targ.isDirectory()) {
@@ -339,19 +339,21 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			List<int[]> ranges = header.getRanges();
 			if (ranges != null) {
 
+				// First it needs to count the length of the content to be used on the header
+				int maxLength = (int) targ.length() - 1;
 				// Content-Range: bytes X-Y/Z
 				int[] range = ranges.get(0);
-				int maxLength = (int) targ.length() - 1;
-				if (range[1] > maxLength || range[1] == -1) {
-					range[1] = maxLength;
-					is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
-				} else{
-					PipedOutputStream pipedOutputStream = new PipedOutputStream();
-					PipedInputStream pipedInputStream = new PipedInputStream(pipedOutputStream);
-					readRangeData(targ, ranges, pipedOutputStream);
-					is = new BufferedInputStream(pipedInputStream, bufferSize);
+				int count = 0;
+				for (int[] r : ranges) {
+					if (r[1] > maxLength || r[1] == -1) {
+						r[1] = maxLength;
+					}
+					if (r[0] >= r[1]) {
+						continue;
+					}
+					count += r[1] - r[0] +1;
 				}
-				
+
 				//remove line with HEADER_CONTENT_LENGTH (this was added upon loading headers from file
 				for (String headerLine : fileHeaders) {
 					if(headerLine.startsWith(HEADER_CONTENT_LENGTH)) {
@@ -359,13 +361,17 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 						break;
 					}
 				}
-				fileHeaders.add(HEADER_CONTENT_LENGTH + " : " + range[1]);
+				fileHeaders.add(HEADER_CONTENT_LENGTH + " : " + count);
 				log("ranges header received. " + HEADER_CONTENT_RANGE + ": " + "bytes " + range[0] + "-" + range[1] + "/" + targ.length());
 				fileHeaders.add(HEADER_CONTENT_RANGE + " : " + "bytes " + range[0] + "-" + range[1] + "/" + targ.length());
 				HttpUtils.printHeaders(targ, fileHeaders, ps, HTTP_PARTIAL_CONTENT_TEXT);
+				ps.write(EOL);
+
+				readRangeData(targ, maxLength,  ranges, ps);
+
 			} else {
 				HttpUtils.printHeaders(targ, fileHeaders, ps, HTTP_OK_TEXT);
-				is = new BufferedInputStream(new FileInputStream(targ.getAbsolutePath()), bufferSize);
+				is = new FileInputStream(targ.getAbsolutePath());
 			}			
 					  
 			
@@ -373,15 +379,17 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 		}
 
 		ExternalLogger.logExternal(InsertSchema.withEvent("Sending file", targ.getName()));
-
-		try {
-			int n;
-			while ((n = is.read(buf)) > 0) {
-				ps.write(buf, 0, n);
+		if(is != null){
+			try {
+				int n;
+				while ((n = is.read(buf)) > 0) {
+					ps.write(buf, 0, n);
+				}
+			} finally {
+				is.close();
 			}
-		} finally {
-			is.close();
 		}
+
 		//log("sendFile()-end file=" + targ.getName());
 	}
 
