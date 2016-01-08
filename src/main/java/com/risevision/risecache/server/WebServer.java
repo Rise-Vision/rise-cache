@@ -1,4 +1,4 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright - 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
@@ -16,6 +16,8 @@ import java.util.*;
 import com.risevision.risecache.Config;
 import com.risevision.risecache.Globals;
 import com.risevision.risecache.Log;
+import com.risevision.risecache.externallogger.ExternalLogger;
+import com.risevision.risecache.externallogger.InsertSchema;
 
 public class WebServer {
 
@@ -80,6 +82,7 @@ public class WebServer {
 		}
 
 		log("Server started");
+		ExternalLogger.logExternal(InsertSchema.withEvent("server started"));
 
 		Selector selector = Selector.open();
 		int portCounter = 0;
@@ -100,6 +103,7 @@ public class WebServer {
 			} catch (Exception e) {
 				if (port == Config.basePort) {
 					Log.error("Cannot open master port " + port + ". Exiting application.");
+					ExternalLogger.logExternal(InsertSchema.withEvent("opening port failed", "Cannot open master port " + port + ". Exiting application."));
 					System.exit(0);
 				}
 			}
