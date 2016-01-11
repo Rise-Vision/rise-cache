@@ -101,6 +101,10 @@ public class DownloadManager {
 			
 			HttpUtils.printHeadersCommon(HttpConstants.HTTP_OK_TEXT, ps);
 			String etag = connection.getHeaderField(HttpConstants.HEADER_ETAG);
+			String lastModified = connection.getHeaderField(HttpConstants.HEADER_LAST_MODIFIED);
+			if(lastModified != null){
+				headers.add(HttpUtils.printHeader_LastModified(lastModified, ps, false));
+			}
 			if (etag != null) {
 				headers.add(HttpUtils.printHeader_ETag(etag, ps, false));
 			}
