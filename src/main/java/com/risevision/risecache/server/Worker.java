@@ -194,7 +194,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    					HttpUtils.printHeadersCommon(ps, CONTENT_TYPE_JAVASCRIPT, responseText.length());
 	    					ps.print(responseText);
 	    				} else {
-	    					HttpUtils.printHeader_ResponseCode(HTTP_BAD_REQUEST_TEXT, ps, true);
+	    					HttpUtils.printHeadersCommon(HTTP_BAD_REQUEST_TEXT, ps);
 	    				}
 	    			} else if (isShutdown) {
 	    				log("shutdown command received");
@@ -210,14 +210,14 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	//    				HttpUtils.printHeaders(targ, ps);
 	//    				sendFile(targ, ps);
 	    			} else if (isLocalName) {
-	    				HttpUtils.printHeader_ResponseCode(HTTP_OK_TEXT, ps, true);
+	    				HttpUtils.printHeadersCommon(HTTP_OK_TEXT, ps);
 	    				ps.print(DownloadManager.getFileName(fileUrl));
 	    			} else if (isFile) {
 	    				log("file request received");
 						ExternalLogger.logExternal(InsertSchema.withEvent("file request received", fileUrl));
 						processFileRequest(fileUrl, ps, isGetRequest, header);
 	    			} else {
-	    				HttpUtils.printHeader_ResponseCode(HTTP_BAD_REQUEST_TEXT, ps, true);
+	    				HttpUtils.printHeadersCommon(HTTP_BAD_REQUEST_TEXT, ps);
 	    			}
 	    			s.close();
 	
@@ -245,7 +245,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 
   private void safeClose(Socket socket, PrintStream ps) {
 	    try {
-			HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps, true);
+			HttpUtils.printHeadersCommon(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps);
 			ps.flush();
 	      	socket.close();
 	    } catch (IOException e) {

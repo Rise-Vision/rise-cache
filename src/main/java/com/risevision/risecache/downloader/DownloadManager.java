@@ -47,7 +47,7 @@ public class DownloadManager {
 		return FileUtils.getCurrentDataFileName(getFileName(fileUrl));
 	}
 
-	public static boolean download(String fileUrl, PrintStream ps, FileInfo fileInfo, boolean isGetRequest) {
+	public static boolean download(String fileUrl, PrintStream ps, FileInfo fileInfo, boolean isGetRequest) throws IOException {
 		
 		BufferedInputStream in = null;
 		RandomAccessFile out = null;
@@ -95,7 +95,7 @@ public class DownloadManager {
 			if (responseCode < 200 || responseCode >= 300) {
 				Log.info("Download cancelled. Response code " + responseCode + " received for URL " + fileUrl);
 				ExternalLogger.logExternal(InsertSchema.withEvent("Download cancelled", "Response code " + responseCode + " received for URL " + fileUrl));
-				HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server respeonse: " + connection.getResponseMessage(), ps, true);
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server respeonse: " + connection.getResponseMessage(), ps);
 				return false;
 			}
 			
@@ -166,11 +166,11 @@ public class DownloadManager {
 		} catch (ConnectException e) {
 			e.printStackTrace();
 			Log.error(e.getMessage());
-			HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, ps, true);
+			HttpUtils.printHeadersCommon(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, ps);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.error(e.getMessage());
-			HttpUtils.printHeader_ResponseCode(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps, true);
+			HttpUtils.printHeadersCommon(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps);
 		} finally {
 			try {
 				if (in != null)
