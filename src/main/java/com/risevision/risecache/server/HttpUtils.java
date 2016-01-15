@@ -1,4 +1,4 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
@@ -56,6 +56,12 @@ public class HttpUtils implements HttpConstants {
 
 	public static String printHeader_ETag(String etag, PrintStream ps, boolean isLastHeader) {
 		String header =  HttpConstants.HEADER_ETAG + ": " + etag;
+		printHeader(header, ps, isLastHeader);
+		return header;
+	}
+
+	public static String printHeader_LastModified(String lastModified, PrintStream ps, boolean isLastHeader) {
+		String header =  HttpConstants.HEADER_LAST_MODIFIED + ": " + lastModified;
 		printHeader(header, ps, isLastHeader);
 		return header;
 	}
