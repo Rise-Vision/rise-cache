@@ -67,7 +67,9 @@ public class DownloadManager {
 			} else {
 				connection = (HttpURLConnection) url.openConnection();
 			}
-			
+
+			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; CrOS x86_64 7520.67.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.110 Safari/537.36");
+
 			if (!isGetRequest)
 				connection.setRequestMethod("HEAD");
 
