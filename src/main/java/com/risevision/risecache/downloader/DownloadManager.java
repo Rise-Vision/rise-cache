@@ -97,6 +97,15 @@ public class DownloadManager {
 				HttpUtils.printHeadersCommon(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server response: " + connection.getResponseMessage(), ps);
 				return false;
 			}
+
+			int contentLength = connection.getContentLength();
+			long freeSpace = FileUtils.getFreeUserSpace();
+			if(contentLength > freeSpace){
+				Log.info("Download cancelled. Insufficient Space. File size: "+contentLength+" Free space: "+freeSpace+". " + fileUrl);
+				ExternalLogger.logExternal(InsertSchema.withEvent("Download cancelled", "Insufficient Space. File size: "+contentLength+" Free space: "+freeSpace+". " + fileUrl));
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_INSUFFICIENT_SPACE_TEXT, ps);
+				return false;
+			}
 			
 			HttpUtils.printHeadersCommon(HttpConstants.HTTP_OK_TEXT, ps);
 			String etag = connection.getHeaderField(HttpConstants.HEADER_ETAG);
@@ -108,7 +117,7 @@ public class DownloadManager {
 				headers.add(HttpUtils.printHeader_ETag(etag, ps, false));
 			}
 			headers.add(HttpUtils.printHeader_ContentType(connection.getContentType(), ps, false));
-			int contentLength = connection.getContentLength();
+
 			headers.add(HttpUtils.printHeader_ContentLength(contentLength, ps, true));
 						
 			headers.add(HttpConstants.HEADER_FILE_URL + ": " + fileUrl);
