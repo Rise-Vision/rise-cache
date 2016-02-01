@@ -1,4 +1,4 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
@@ -57,7 +57,7 @@ public interface HttpConstants {
 	public static final String HTTP_NOT_FOUND_TEXT = "404 Not Found. Rise Cache.";
 	public static final String HTTP_CONNECTION_REFUSED_TEXT = "404 Connection refused.Rise Cache.";
 	public static final String HTTP_CLIENT_TIMEOUT_TEXT = "408 Request Timeout. Rise Cache.";
-	public static final String HTTP_INSUFFICIENT_SPACE_TEXT = "500 Internal Server Error. Insufficient Space. Rise Cache.";
+	public static final String HTTP_INSUFFICIENT_SPACE_TEXT = "507 Insufficient Storage. Rise Cache.";
 	public static final String HTTP_INTERNAL_ERROR_TEXT = "500 Internal Server Error. Rise Cache.";
 	
 	public static final String HEADER_IF_NONE_MATCH = "If-None-Match";
