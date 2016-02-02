@@ -6,9 +6,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
 
 public class ExternalLogger {
   private static final String logUrl = "https://www.googleapis.com/bigquery/v2/" +
@@ -18,7 +15,7 @@ public class ExternalLogger {
     try {
       Token.update();
     } catch (IOException e) {
-      Log.error("External logger token update: " + e.getMessage());
+      Log.error("External logger token update", e.getMessage());
     }
 
     if (schema.getEvent() == null || schema.getEvent().equals("")) {
@@ -40,7 +37,7 @@ public class ExternalLogger {
       }
       conn.getInputStream().close();
     } catch (IOException e) {
-      Log.error("External logger event save: " + e.getMessage());
+      Log.error("External logger event save", e.getMessage());
     }
   }
 

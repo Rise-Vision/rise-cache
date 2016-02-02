@@ -21,8 +21,6 @@ import com.risevision.risecache.Log;
 import com.risevision.risecache.cache.FileInfo;
 import com.risevision.risecache.cache.FileRequests;
 import com.risevision.risecache.cache.FileUtils;
-import com.risevision.risecache.externallogger.ExternalLogger;
-import com.risevision.risecache.externallogger.InsertSchema;
 import com.risevision.risecache.jobs.CheckExpiredJob;
 import com.risevision.risecache.server.HttpConstants;
 import com.risevision.risecache.server.HttpUtils;
@@ -95,9 +93,8 @@ public class DownloadManager {
 
 			int responseCode = connection.getResponseCode();
 			if (responseCode < 200 || responseCode >= 300) {
-				Log.info("Download cancelled. Response code " + responseCode + " received for URL " + fileUrl);
-				ExternalLogger.logExternal(InsertSchema.withEvent("Download cancelled", "Response code " + responseCode + " received for URL " + fileUrl));
-				HttpUtils.printHeadersCommon(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server respeonse: " + connection.getResponseMessage(), ps);
+				Log.warn("Download cancelled", "Response code " + responseCode + " received for URL " + fileUrl);
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server response: " + connection.getResponseMessage(), ps);
 				return false;
 			}
 			
@@ -167,11 +164,11 @@ public class DownloadManager {
 
 		} catch (ConnectException e) {
 			e.printStackTrace();
-			Log.error(e.getMessage());
+			Log.error(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, e.getMessage());
 			HttpUtils.printHeadersCommon(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, ps);
 		} catch (Exception e) {
 			e.printStackTrace();
-			Log.error(e.getMessage());
+			Log.error(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, e.getMessage());
 			HttpUtils.printHeadersCommon(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps);
 		} finally {
 			try {

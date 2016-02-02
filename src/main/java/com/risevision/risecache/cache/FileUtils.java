@@ -1,4 +1,4 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
@@ -38,7 +38,7 @@ public class FileUtils {
 			attrs = Files.readAttributes(dataFilePath, BasicFileAttributes.class);
         	fileLastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
 		} catch (Exception e) {
-			Log.error("Cannot read file attributes. " + e.getMessage());
+			Log.error("Cannot read file attributes", e.getMessage());
 			e.printStackTrace();
 			return null;
 		}
@@ -73,7 +73,7 @@ public class FileUtils {
 		else
 			expiryDate = new Date(new Date().getTime() - Globals.FILE_KEEP_IN_CACHE_DURATION_MS);
 		
-		Log.warn("running Delete Expired job. expiryDate=" + expiryDate.toString() + " , freeSpace=" + freeSpace);
+		Log.warn("running Delete Expired job", "expiryDate=" + expiryDate.toString() + " , freeSpace=" + freeSpace);
 		File folder = new File(Config.cachePath);
 		for (final File file : folder.listFiles()) {
 		    if (file.isFile() && file.getName().endsWith(Globals.FILE_EXT_DATA)) {
@@ -84,7 +84,7 @@ public class FileUtils {
 					if (fileLastAccessTime.before(expiryDate))
 						deleteDataAndHeaderFiles(file);
 				} catch (Exception e) {
-					Log.error("Cannot read file attributes. " + e.getMessage());
+					Log.error("Cannot read file attributes", e.getMessage());
 					e.printStackTrace();
 				}
 		    }
@@ -98,7 +98,7 @@ public class FileUtils {
 			return folder.getUsableSpace();
 		}
 		catch(Exception e) {
-			Log.error("Cannot calculate free space percentage. " + e.getMessage());
+			Log.error("Cannot calculate free space percentage", e.getMessage());
 			e.printStackTrace();
 			return 0;
 		}
@@ -117,7 +117,7 @@ public class FileUtils {
 				}
 			}
 		} catch (Exception e) {
-			Log.error("Error in deleteIncompleteDownloads(): " + e.getMessage());
+			Log.error("Error in deleteIncompleteDownloads()", e.getMessage());
 		}
 	}
 
@@ -171,7 +171,7 @@ public class FileUtils {
 			Files.move(src, dest);
 			saveHeaders(destHeaders, headers);
 		} catch (IOException e) {
-			Log.error("Error moving file " + src + " to " + dest + ". " + e.getMessage());
+			Log.error("Error moving file", "From " + src + " to " + dest + ". " + e.getMessage());
 			e.printStackTrace();
 		}
 		

@@ -97,7 +97,7 @@ public class Config {
 			}
 			
 		} catch (Exception e) {
-			Log.warn("Error loading application properties. File name: " + fileName + ". Error: " + e.getMessage());
+			Log.warn("Error loading application properties", "File name: " + fileName + ". Error: " + e.getMessage());
 		}
 	}
 
@@ -120,7 +120,7 @@ public class Config {
 			}
 
 		} catch (Exception e) {
-			Log.warn("Error loading display properties. File name: " + fileName + ". Error: " + e.getMessage());
+			Log.warn("Error loading display properties", "File name: " + fileName + ". Error: " + e.getMessage());
 		}
 	}
 
@@ -162,7 +162,7 @@ public class Config {
 			try {
 				res = Integer.parseInt(s);
 			} catch (Exception e) {
-				Log.warn("property " + name + " is not a number.");
+				Log.warn("Property is not a number" , name);
 			}
 		}
 		return res;
