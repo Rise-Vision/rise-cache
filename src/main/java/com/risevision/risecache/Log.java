@@ -1,8 +1,11 @@
-// Copyright © 2010 - May 2014 Rise Vision Incorporated.
+// Copyright ï¿½ 2010 - May 2014 Rise Vision Incorporated.
 // Use of this software is governed by the GPLv3 license
 // (reproduced in the LICENSE file).
 
 package com.risevision.risecache;
+
+import com.risevision.risecache.externallogger.ExternalLogger;
+import com.risevision.risecache.externallogger.InsertSchema;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,14 +63,16 @@ public class Log {
 			log.info(msg);
 	}
 
-	public static void warn(String msg) {
+	public static void warn(String warning,String msg) {
 		if (log != null)
-			log.warning(msg);
+			log.warning(warning + " " + msg);
+		ExternalLogger.logExternal(InsertSchema.withEvent("Warning", warning, msg));
 	}
 
-	public static void error(String msg) {
+	public static void error(String error, String msg) {
 		if (log != null)
-			log.severe(msg);
+			log.severe(error + " " + msg);
+		ExternalLogger.logExternal(InsertSchema.withEvent("Error", error, msg));
 	}
 	
 }

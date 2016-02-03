@@ -26,7 +26,7 @@ public class Main {
 		Config.loadDisplayProperties();
 		
 		try {
-			ExternalLogger.logExternal(InsertSchema.withEvent("startup"));
+			ExternalLogger.logExternal(InsertSchema.withEvent("Info","startup"));
 			
 			//use socket to test if another instance is running
 			java.net.ServerSocket ss = WebServer.createServerSocket();//new java.net.ServerSocket(Config.basePort); 
@@ -41,13 +41,11 @@ public class Main {
 			
 			WebServer.main(args);
 		} catch (BindException e) {
-			Log.error("Cannot start application. Cannot open port " + Config.basePort + ". You can only run one instance of " + Globals.APPLICATION_NAME + ".");
-			ExternalLogger.logExternal(InsertSchema.withEvent("startup failed bind"));
+			Log.error("Cannot start application, startup failed bind", "Cannot open port " + Config.basePort + ". You can only run one instance of " + Globals.APPLICATION_NAME + ".");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			Log.error(e.getMessage());
-			ExternalLogger.logExternal(InsertSchema.withEvent("application crash", e.getMessage()));
+			Log.error("Application crash", e.getMessage());
 		}
 
 	}

@@ -198,7 +198,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    				}
 	    			} else if (isShutdown) {
 	    				log("shutdown command received");
-						ExternalLogger.logExternal(InsertSchema.withEvent("shutdown command received"));
+						ExternalLogger.logExternal(InsertSchema.withEvent("Info","shutdown command received"));
 						System.exit(0);
 	    			} else if (isVersion) {
 	    				HttpUtils.printHeadersCommon(ps, CONTENT_TYPE_TEXT_PLAIN, Globals.APPLICATION_VERSION.length());
@@ -214,7 +214,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 	    				ps.print(DownloadManager.getFileName(fileUrl));
 	    			} else if (isFile) {
 	    				log("file request received");
-						ExternalLogger.logExternal(InsertSchema.withEvent("file request received", fileUrl));
+						ExternalLogger.logExternal(InsertSchema.withEvent("Info", "file request received", fileUrl));
 						processFileRequest(fileUrl, ps, isGetRequest, header);
 	    			} else {
 	    				HttpUtils.printHeadersCommon(HTTP_BAD_REQUEST_TEXT, ps);
@@ -237,7 +237,7 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
 			log("Error: " + header.file + "\n" + e.getMessage() + "\n" + sw.toString());
-			ExternalLogger.logExternal(InsertSchema.withEvent("handle client error", header.file + " - " + e.getMessage()));
+			ExternalLogger.logExternal(InsertSchema.withEvent("Error", "handle client error", header.file + " - " + e.getMessage()));
 			safeClose(s, ps);
         }
 
@@ -378,7 +378,6 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			ps.write(EOL);
 		}
 
-		ExternalLogger.logExternal(InsertSchema.withEvent("Sending file", targ.getName()));
 		if(is != null){
 			try {
 				int n;
@@ -389,8 +388,6 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 				is.close();
 			}
 		}
-
-		//log("sendFile()-end file=" + targ.getName());
 	}
 
 	void listDirectory(File dir, PrintStream ps) throws IOException {
