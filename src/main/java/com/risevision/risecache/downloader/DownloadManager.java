@@ -101,8 +101,7 @@ public class DownloadManager {
 			int contentLength = connection.getContentLength();
 			long freeSpace = FileUtils.getFreeUserSpace();
 			if(contentLength > freeSpace){
-				Log.info("Download cancelled. Insufficient Space. File size: "+contentLength+" Free space: "+freeSpace+". " + fileUrl);
-				ExternalLogger.logExternal(InsertSchema.withEvent("Download cancelled", "Insufficient Space. File size: "+contentLength+" Free space: "+freeSpace+". " + fileUrl));
+				Log.error("Download cancelled. Insufficient Space.", "File size: "+contentLength+" Free space: "+freeSpace+". " + fileUrl);
 				HttpUtils.printHeadersCommon(HttpConstants.HTTP_INSUFFICIENT_SPACE_TEXT, ps);
 				return false;
 			}
