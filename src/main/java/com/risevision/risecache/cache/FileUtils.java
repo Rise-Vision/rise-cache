@@ -91,7 +91,7 @@ public class FileUtils {
 		}
 	}
 
-	private static long getFreeUserSpace() {
+	public static long getFreeUserSpace() {
 		File folder = new File(Config.cachePath);
 		try {
 			//return (int)((folder.getUsableSpace() * 100.0f) / folder.getTotalSpace());
