@@ -14,9 +14,10 @@ import java.util.Properties;
 public class Config {
 
 	public static String appPath;
+	public static String jarPath;
 	public static String cachePath; //folder for downloaded files
 	public static String downloadPath; //folder for downloading files
-	public static String playerPath;
+	public static String versionPath;
 
 	public static int basePort = Globals.BASE_PORT;
 	public static int maxPort = Globals.MAX_PORT;
@@ -25,6 +26,7 @@ public class Config {
 	public static String proxyAddr;
 	public static int proxyPort;
 	public static String riseCacheVersion;
+        public static boolean isWindows;
 
 	public static String debugUrl = null;
 
@@ -35,24 +37,27 @@ public class Config {
 	private static Properties props;
 
 	public static void init(Class<?> mainClass) {
-		appPath = mainClass.getProtectionDomain().getCodeSource().getLocation().getPath();
-		if (System.getProperty("os.name").startsWith("Windows")) {
+                isWindows = System.getProperty("os.name").startsWith("Windows");
+
+		appPath = System.getenv(isWindows ? "LOCALAPPDATA" : "HOME") + File.separator + "rvplayer";
+                jarPath = mainClass.getProtectionDomain().getCodeSource().getLocation().getPath();
+		if (isWindows) {
 			try {
-				appPath = URLDecoder.decode(appPath, "UTF-8");
+				jarPath = URLDecoder.decode(jarPath, "UTF-8");
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			appPath = appPath.substring(1).replace("/", File.separator);
+			jarPath = jarPath.substring(1).replace("/", File.separator);
 		}
 	
-		if (appPath.endsWith(".jar") || appPath.endsWith(File.separator)) {
-			appPath = appPath.substring(0, appPath.lastIndexOf(File.separator));
+		if (jarPath.endsWith(".jar") || jarPath.endsWith(File.separator)) {
+			jarPath = jarPath.substring(0, jarPath.lastIndexOf(File.separator));
 		}
 	
 		cachePath = appPath + File.separator + "cache";
 		downloadPath = appPath + File.separator + "download";
-		playerPath = (new File(appPath)).getParentFile().getPath();
+		versionPath = (new File(jarPath)).getParentFile().getPath();
 
 		//create download folder if missing
 		File downloadDir = new File(downloadPath);
@@ -105,7 +110,7 @@ public class Config {
 
 		String fileName = null;
 		try {
-			fileName = URLDecoder.decode(playerPath + File.separator + "RiseDisplayNetworkII.ini", "UTF-8");
+			fileName = URLDecoder.decode(appPath + File.separator + "RiseDisplayNetworkII.ini", "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -180,7 +185,7 @@ public class Config {
 
 	private static String readVersion(String fileName) {
 		String res = "";
-		File file = new File(playerPath, fileName);
+		File file = new File(versionPath, fileName);
 		if (file.exists()) {
 			try {
 				List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
