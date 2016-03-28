@@ -55,8 +55,8 @@ public class Config {
 			jarPath = jarPath.substring(0, jarPath.lastIndexOf(File.separator));
 		}
 	
-		cachePath = appPath + File.separator + "cache";
-		downloadPath = appPath + File.separator + "download";
+		cachePath = appPath + File.separator + Globals.APPLICATION_NAME + File.separator + "cache";
+		downloadPath = appPath + File.separator + Globals.APPLICATION_NAME + File.separator + "download";
 		versionPath = (new File(jarPath)).getParentFile().getPath();
 
 		//create download folder if missing
