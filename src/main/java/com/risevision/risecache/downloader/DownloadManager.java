@@ -55,7 +55,7 @@ public class DownloadManager {
 		
 		try {
 			String destPath = Config.downloadPath + File.separator + getFileName(fileUrl);
-			
+
 			URL url = new java.net.URL(Config.debugUrl == null ? fileUrl : Config.debugUrl);
 			HttpURLConnection connection;
 			
@@ -93,8 +93,14 @@ public class DownloadManager {
 
 			int responseCode = connection.getResponseCode();
 			if (responseCode < 200 || responseCode >= 300) {
-				Log.warn("Download cancelled", "Response code " + responseCode + " received for URL " + fileUrl);
-				HttpUtils.printHeadersCommon(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server response: " + connection.getResponseMessage(), ps);
+				if (responseCode == 304) {
+					Log.info("Download cancelled Response code " + responseCode + " received for URL " + fileUrl);
+				} else {
+					Log.warn("Download cancelled", "Response code " + responseCode + " received for URL " + fileUrl);
+					if (fileInfo == null) {
+						HttpUtils.printHeadersCommon(HttpConstants.HTTP_NOT_FOUND_TEXT + " Server response: " + connection.getResponseMessage(), ps);
+					}
+				}
 				return false;
 			}
 
@@ -173,11 +179,15 @@ public class DownloadManager {
 		} catch (ConnectException e) {
 			e.printStackTrace();
 			Log.error(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, e.getMessage());
-			HttpUtils.printHeadersCommon(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, ps);
+			if (fileInfo == null) {
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, ps);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.error(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, e.getMessage());
-			HttpUtils.printHeadersCommon(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps);
+			if (fileInfo == null) {
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps);
+			}
 		} finally {
 			try {
 				if (in != null)
