@@ -62,14 +62,14 @@ public class Config {
 		//create download folder if missing
 		File downloadDir = new File(downloadPath);
 		if (!downloadDir.exists()) {
-			downloadDir.mkdir();
+			downloadDir.mkdirs();
 			//throw new Error(dataPath + " doesn't exist as server root");
 		}
 	
 		//create cache folder if missing
 		File cacheDir = new File(cachePath);
 		if (!cacheDir.exists()) {
-			cacheDir.mkdir();
+			cacheDir.mkdirs();
 			//throw new Error(cacheDir + " doesn't exist as server root");
 		}
 
