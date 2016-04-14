@@ -41,11 +41,11 @@ public class Main {
 			
 			WebServer.main(args);
 		} catch (BindException e) {
-			Log.error("Cannot start application, startup failed bind", "Cannot open port " + Config.basePort + ". You can only run one instance of " + Globals.APPLICATION_NAME + ".");
+			Log.error("Cannot start application, startup failed bind: BindException", "Cannot open port " + Config.basePort + ". You can only run one instance of " + Globals.APPLICATION_NAME + ".");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			Log.error("Application crash", e.getMessage());
+			Log.error("Application crash" ,e.getCause() + ":" + e.getMessage());
 		}
 
 	}

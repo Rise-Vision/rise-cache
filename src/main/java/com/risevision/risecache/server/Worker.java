@@ -236,8 +236,8 @@ class Worker extends WebServer implements HttpConstants, Runnable {
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			log("Error: " + header.file + "\n" + e.getMessage() + "\n" + sw.toString());
-			ExternalLogger.logExternal(InsertSchema.withEvent("Error", "handle client error", header.file + " - " + e.getMessage()));
+			log("Error: " + header.file + "\n" + e.getCause() +": "+ e.getMessage() + "\n" + sw.toString());
+			ExternalLogger.logExternal(InsertSchema.withEvent("Error", "handle client error" , header.file + " - "+ e.getCause() + e.getMessage()));
 			safeClose(s, ps);
         }
 

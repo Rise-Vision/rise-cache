@@ -9,11 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
 
 import com.risevision.risecache.Config;
@@ -178,13 +174,25 @@ public class DownloadManager {
 
 		} catch (ConnectException e) {
 			e.printStackTrace();
-			Log.error(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, e.getMessage());
+			Log.error(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT + ": ConnectException", e.getCause() + ": " + e.getMessage());
 			if (fileInfo == null) {
 				HttpUtils.printHeadersCommon(HttpConstants.HTTP_CONNECTION_REFUSED_TEXT, ps);
 			}
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			Log.error(HttpConstants.HTTP_BAD_REQUEST_TEXT + ": UnknownHostException", e.getCause() + ": " + e.getMessage());
+			if (fileInfo == null) {
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_BAD_REQUEST_TEXT, ps);
+			}
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			Log.error(HttpConstants.HTTP_BAD_REQUEST_TEXT + ": MalformedURLException",e.getCause() + ": " + e.getMessage());
+			if (fileInfo == null) {
+				HttpUtils.printHeadersCommon(HttpConstants.HTTP_BAD_REQUEST_TEXT, ps);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			Log.error(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, e.getMessage());
+			Log.error(HttpConstants.HTTP_INTERNAL_ERROR_TEXT,e.getCause() + ": " + e.getMessage());
 			if (fileInfo == null) {
 				HttpUtils.printHeadersCommon(HttpConstants.HTTP_INTERNAL_ERROR_TEXT, ps);
 			}

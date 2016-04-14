@@ -38,7 +38,7 @@ public class FileUtils {
 			attrs = Files.readAttributes(dataFilePath, BasicFileAttributes.class);
         	fileLastModifiedTime = new Date(attrs.lastModifiedTime().toMillis());
 		} catch (Exception e) {
-			Log.error("Cannot read file attributes", e.getMessage());
+			Log.error("Cannot read file attributes",e.getCause() + ": " + e.getMessage());
 			e.printStackTrace();
 			return null;
 		}
@@ -84,7 +84,7 @@ public class FileUtils {
 					if (fileLastAccessTime.before(expiryDate))
 						deleteDataAndHeaderFiles(file);
 				} catch (Exception e) {
-					Log.error("Cannot read file attributes", e.getMessage());
+					Log.error("Cannot read file attributes", e.getCause() +" : "+e.getMessage());
 					e.printStackTrace();
 				}
 		    }
@@ -98,7 +98,7 @@ public class FileUtils {
 			return folder.getUsableSpace();
 		}
 		catch(Exception e) {
-			Log.error("Cannot calculate free space percentage", e.getMessage());
+			Log.error("Cannot calculate free space percentage", e.getCause() + ": " + e.getMessage());
 			e.printStackTrace();
 			return 0;
 		}
@@ -117,7 +117,7 @@ public class FileUtils {
 				}
 			}
 		} catch (Exception e) {
-			Log.error("Error in deleteIncompleteDownloads()", e.getMessage());
+			Log.error("Error in deleteIncompleteDownloads()",e.getCause() + ": "+ e.getMessage());
 		}
 	}
 
@@ -171,7 +171,7 @@ public class FileUtils {
 			Files.move(src, dest);
 			saveHeaders(destHeaders, headers);
 		} catch (IOException e) {
-			Log.error("Error moving file", "From " + src + " to " + dest + ". " + e.getMessage());
+			Log.error("Error moving file: IOException", "From " + src + " to " + dest + ". " + e.getMessage());
 			e.printStackTrace();
 		}
 		
