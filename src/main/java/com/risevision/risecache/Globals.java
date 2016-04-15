@@ -7,7 +7,7 @@ package com.risevision.risecache;
 public class Globals {
 
 	public static final String APPLICATION_NAME = "RiseCache";
-	public static final String APPLICATION_VERSION = "2016.04.05.12.00";
+	public static final String APPLICATION_VERSION = "2016.04.15.12.00";
 
 	public static final int BASE_PORT = 9494;
 	public static final int MAX_PORT = BASE_PORT + 20; //do not try to open ports above this number
