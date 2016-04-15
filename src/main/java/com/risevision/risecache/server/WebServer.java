@@ -102,7 +102,7 @@ public class WebServer {
 				}
 			} catch (Exception e) {
 				if (port == Config.basePort) {
-					Log.error("Cannot open master port", port + ". Exiting application.");
+					Log.error("Cannot open master port", e.getCause() + ": " + port + ". Exiting application.");
 					System.exit(0);
 				}
 			}
